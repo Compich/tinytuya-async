@@ -4,7 +4,7 @@
 TinyTuya Network Scanner for Tuya based WiFi smart devices
 
 Author: Jason A. Cox
-For more information see https://github.com/jasonacox/tinytuya
+For more information see https://github.com/jasonacox/tinytuya_async
 
 Description
     Scan will scan the local network for Tuya devices and if a local devices.json is
@@ -26,7 +26,7 @@ import errno
 import base64
 import traceback
 from colorama import init
-import tinytuya
+import tinytuya_async
 
 # Optional libraries required for forced scanning
 #try:
@@ -51,19 +51,19 @@ except:
 init()
 
 # Configuration Files
-DEVICEFILE = tinytuya.DEVICEFILE
-SNAPSHOTFILE = tinytuya.SNAPSHOTFILE
+DEVICEFILE = tinytuya_async.DEVICEFILE
+SNAPSHOTFILE = tinytuya_async.SNAPSHOTFILE
 
 # Global Network Configs
-DEFAULT_NETWORK = tinytuya.DEFAULT_NETWORK
-TCPTIMEOUT = tinytuya.TCPTIMEOUT    # Seconds to wait for socket open for scanning
-TCPPORT = tinytuya.TCPPORT          # Tuya TCP Local Port
-MAXCOUNT = tinytuya.MAXCOUNT        # How many tries before stopping
-UDPPORT = tinytuya.UDPPORT          # Tuya 3.1 UDP Port
-UDPPORTS = tinytuya.UDPPORTS        # Tuya 3.3 encrypted UDP Port
-UDPPORTAPP = tinytuya.UDPPORTAPP    # Tuya app encrypted UDP Port
-TIMEOUT = tinytuya.TIMEOUT          # Socket Timeout
-SCANTIME = tinytuya.SCANTIME        # How many seconds to wait before stopping
+DEFAULT_NETWORK = tinytuya_async.DEFAULT_NETWORK
+TCPTIMEOUT = tinytuya_async.TCPTIMEOUT    # Seconds to wait for socket open for scanning
+TCPPORT = tinytuya_async.TCPPORT          # Tuya TCP Local Port
+MAXCOUNT = tinytuya_async.MAXCOUNT        # How many tries before stopping
+UDPPORT = tinytuya_async.UDPPORT          # Tuya 3.1 UDP Port
+UDPPORTS = tinytuya_async.UDPPORTS        # Tuya 3.3 encrypted UDP Port
+UDPPORTAPP = tinytuya_async.UDPPORTAPP    # Tuya app encrypted UDP Port
+TIMEOUT = tinytuya_async.TIMEOUT          # Socket Timeout
+SCANTIME = tinytuya_async.SCANTIME        # How many seconds to wait before stopping
 
 max_parallel = 300
 connect_timeout = 3
@@ -205,7 +205,7 @@ class DeviceDetect(object):
         key = self.cur_key.key if self.cur_key else self.deviceinfo['key']
         if key == "":
             key = 'f'*16 # use bogus key if missing
-        self.device = tinytuya.OutletDevice( self.deviceinfo['gwId'], self.ip, key, dev_type=self.deviceinfo['dev_type'], version=float(self.deviceinfo['version']))
+        self.device = tinytuya_async.OutletDevice( self.deviceinfo['gwId'], self.ip, key, dev_type=self.deviceinfo['dev_type'], version=float(self.deviceinfo['version']))
         self.device.set_socketPersistent(True)
         self.device.socket = self.sock
 
@@ -461,19 +461,19 @@ class ForceScannedDevice(DeviceDetect):
             # v3.3 devices will return an encrypted rejection message
             # v3.4/3.5 devices will slam the door in our face by dropping the connection
             if self.deviceinfo['dev_type'] == 'device22':
-                msg = tinytuya.MessagePayload(tinytuya.CONTROL_NEW, b'')
+                msg = tinytuya_async.MessagePayload(tinytuya_async.CONTROL_NEW, b'')
             else:
-                msg = tinytuya.MessagePayload(tinytuya.DP_QUERY, b'')
+                msg = tinytuya_async.MessagePayload(tinytuya_async.DP_QUERY, b'')
         elif self.step == FSCAN_INITIAL_CONNECT:
             # this is a connect retry
             dummy_payload = bytes(bytearray.fromhex('deadbeef112233445566778899aabbccddeeffb00bface112233feedbabe74f0'))
             if self.deviceinfo['dev_type'] == 'device22':
-                msg = tinytuya.MessagePayload(tinytuya.CONTROL_NEW, dummy_payload)
+                msg = tinytuya_async.MessagePayload(tinytuya_async.CONTROL_NEW, dummy_payload)
             else:
-                msg = tinytuya.MessagePayload(tinytuya.DP_QUERY, dummy_payload)
+                msg = tinytuya_async.MessagePayload(tinytuya_async.DP_QUERY, dummy_payload)
         elif self.step == FSCAN_v31_BRUTE_FORCE_ACTIVE:
             dummy_payload = bytes(bytearray.fromhex('deadbeef112233445566778899aabbccddeeffb00bface112233feedbabe74f0'))
-            msg = tinytuya.MessagePayload(tinytuya.CONTROL, dummy_payload)
+            msg = tinytuya_async.MessagePayload(tinytuya_async.CONTROL, dummy_payload)
         #elif self.step == FSCAN_v33_BRUTE_FORCE_ACTIVE:
         #    pass
         elif self.step == FSCAN_v34_BRUTE_FORCE_ACTIVE:
@@ -508,16 +508,16 @@ class ForceScannedDevice(DeviceDetect):
 
         while len(data):
             try:
-                prefix_offset = data.find(tinytuya.PREFIX_BIN)
+                prefix_offset = data.find(tinytuya_async.PREFIX_BIN)
                 if prefix_offset > 0:
                     data = data[prefix_offset:]
                 hmac_key = self.device.local_key if self.deviceinfo['version'] >= 3.4 else None
-                msg = tinytuya.unpack_message(data, hmac_key=hmac_key)
+                msg = tinytuya_async.unpack_message(data, hmac_key=hmac_key)
             except:
                 break
 
             odata = data
-            #data = data[tinytuya.message_length(msg.payload):]
+            #data = data[tinytuya_async.message_length(msg.payload):]
             # this will not strip everything, but it will be enough for data.find() to find it
             data = data[len(msg.payload)+8:]
 
@@ -525,7 +525,7 @@ class ForceScannedDevice(DeviceDetect):
             if not msg or len(msg.payload) == 0:
                 continue
 
-            if msg.cmd == tinytuya.SESS_KEY_NEG_RESP:
+            if msg.cmd == tinytuya_async.SESS_KEY_NEG_RESP:
                 if not self.v34_negotiate_sess_key_step_2( msg ):
                     #if self.debug:
                     print('odata:', odata)
@@ -539,16 +539,16 @@ class ForceScannedDevice(DeviceDetect):
                 self.deviceinfo['key'] = self.cur_key.key
                 self.found_key()
                 self.cur_key.used = True
-                self.send_queue.append(self.device.generate_payload(tinytuya.DP_QUERY))
+                self.send_queue.append(self.device.generate_payload(tinytuya_async.DP_QUERY))
                 return
 
-            if msg.payload.startswith(tinytuya.PROTOCOL_VERSION_BYTES_31):
+            if msg.payload.startswith(tinytuya_async.PROTOCOL_VERSION_BYTES_31):
                 self.deviceinfo['version'] = 3.1
-                payload = msg.payload[len(tinytuya.PROTOCOL_VERSION_BYTES_31)+16 :]
+                payload = msg.payload[len(tinytuya_async.PROTOCOL_VERSION_BYTES_31)+16 :]
                 self.ver_found = True
-            elif msg.payload.startswith(tinytuya.PROTOCOL_VERSION_BYTES_33):
+            elif msg.payload.startswith(tinytuya_async.PROTOCOL_VERSION_BYTES_33):
                 self.deviceinfo['version'] = 3.3
-                payload = msg.payload[len(tinytuya.PROTOCOL_33_HEADER) :]
+                payload = msg.payload[len(tinytuya_async.PROTOCOL_33_HEADER) :]
                 self.ver_found = True
             else:
                 payload = msg.payload
@@ -560,7 +560,7 @@ class ForceScannedDevice(DeviceDetect):
                 # FIXME try and use the response?
             #    self.step = FSCAN_v3x_PROVOKE_RESPONSE
             #    self.timeo = time.time() + 1.0
-            #    self.sock.sendall( self.device._encode_message( tinytuya.MessagePayload(tinytuya.DP_QUERY, b'') ) )
+            #    self.sock.sendall( self.device._encode_message( tinytuya_async.MessagePayload(tinytuya_async.DP_QUERY, b'') ) )
             #elif self.step == FSCAN_v3x_PROVOKE_RESPONSE:
                 self.timeo = time.time() + 5.0
                 have_err_string = False
@@ -579,7 +579,7 @@ class ForceScannedDevice(DeviceDetect):
 
                         self.keygen = (i for i in self.options['keylist'] if not i.used)
                         self.v3x_brute_force_try_next_key()
-                        #self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya.DP_QUERY) ) )
+                        #self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya_async.DP_QUERY) ) )
                         #self.step = FSCAN_FINAL_POLL
                 except:
                     pass
@@ -600,7 +600,7 @@ class ForceScannedDevice(DeviceDetect):
                 if 'error' in payload.decode('utf8'):
                     self.brute_force_found_key()
             elif self.step == FSCAN_v31_PASSIVE_LISTEN:
-                if msg.cmd == tinytuya.STATUS and msg.retcode == 0:
+                if msg.cmd == tinytuya_async.STATUS and msg.retcode == 0:
                     try:
                         self.brute_force_data.append( base64.b64decode( payload ) )
                         self.brute_force_v3x_data()
@@ -644,7 +644,7 @@ class ForceScannedDevice(DeviceDetect):
         for key in (i for i in self.options['keylist'] if not i.used):
             self.cur_key = key
             bad = False
-            cipher = tinytuya.AESCipher( key.key_encoded )
+            cipher = tinytuya_async.AESCipher( key.key_encoded )
             matched = None
             for msg in self.brute_force_data:
                 matched = None
@@ -715,7 +715,7 @@ class ForceScannedDevice(DeviceDetect):
         self.deviceinfo['key'] = self.cur_key.key
         self.found_key()
         self.device.local_key = self.device.real_local_key = self.cur_key.key_encoded
-        self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya.DP_QUERY) ) )
+        self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya_async.DP_QUERY) ) )
         self.step = FSCAN_FINAL_POLL
         self.message = "%s    Polling %s Failed: No response to poll request" % (self.options['termcolors'].alertdim, self.ip)
         self.timeo = time.time() + 2.0
@@ -755,7 +755,7 @@ class PollDevice(DeviceDetect):
             if self.sock:
                 self.sock.close()
             self.connect()
-            self.timeo = time.time() + tinytuya.TIMEOUT
+            self.timeo = time.time() + tinytuya_async.TIMEOUT
             if self.debug:
                 print('PollDevice: New timeo:', self.timeo)
         else:
@@ -799,7 +799,7 @@ class PollDevice(DeviceDetect):
                 # self.device.real_local_key, self.device.local_key
                 self.v34_negotiate_sess_key_start()
             else:
-                self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya.DP_QUERY) ) )
+                self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya_async.DP_QUERY) ) )
 
             self.read = True
             #deviceslist[ip]["err"] = "Check DEVICE KEY - Invalid response"
@@ -826,11 +826,11 @@ class PollDevice(DeviceDetect):
 
         while len(data):
             try:
-                prefix_offset = data.find(tinytuya.PREFIX_BIN)
+                prefix_offset = data.find(tinytuya_async.PREFIX_BIN)
                 if prefix_offset > 0:
                     data = data[prefix_offset:]
                 hmac_key = self.device.local_key if self.device.version >= 3.4 else None
-                msg = tinytuya.unpack_message(data, hmac_key=hmac_key)
+                msg = tinytuya_async.unpack_message(data, hmac_key=hmac_key)
             except:
                 break
 
@@ -842,14 +842,14 @@ class PollDevice(DeviceDetect):
             if not msg or len(msg.payload) == 0:
                 continue
 
-            if msg.cmd == tinytuya.SESS_KEY_NEG_RESP:
+            if msg.cmd == tinytuya_async.SESS_KEY_NEG_RESP:
                 if not self.v34_negotiate_sess_key_step_2( msg ):
                     print('odata:', odata)
                     self.timeout()
                     return
                 self.read = False
                 self.write = True
-                self.send_queue.append(self.device.generate_payload(tinytuya.DP_QUERY))
+                self.send_queue.append(self.device.generate_payload(tinytuya_async.DP_QUERY))
                 return
 
             dev_type = self.device.dev_type
@@ -859,7 +859,7 @@ class PollDevice(DeviceDetect):
                 result = self.device._decode_payload(msg.payload)
             except:
                 log.debug("PollDevice: error unpacking or decoding tuya JSON payload")
-                result = tinytuya.error_json(tinytuya.ERR_PAYLOAD)
+                result = tinytuya_async.error_json(tinytuya_async.ERR_PAYLOAD)
 
             # Did we detect a device22 device? Return ERR_DEVTYPE error.
             if dev_type != self.device.dev_type:
@@ -868,7 +868,7 @@ class PollDevice(DeviceDetect):
                     dev_type,
                     self.device.dev_type,
                 )
-                self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya.DP_QUERY) ) )
+                self.sock.sendall( self.device._encode_message( self.device.generate_payload(tinytuya_async.DP_QUERY) ) )
                 break
 
             self.finished = True
@@ -896,7 +896,7 @@ def scan(scantime=None, color=True, forcescan=False, discover=True, assume_yes=F
 
 def _generate_ip(networks, verbose, term):
     for netblock in networks:
-        if tinytuya.IS_PY2 and type(netblock) == str:
+        if tinytuya_async.IS_PY2 and type(netblock) == str:
             netblock = netblock.decode('latin1')
         try:
             network = ipaddress.ip_network(netblock)
@@ -958,7 +958,7 @@ def _print_device_info( result, note, term, extra_message=None ):
 # Scan function
 def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False, byID=False, show_timer=None, discover=True, wantips=None, wantids=None, snapshot=None, assume_yes=False, tuyadevices=[], maxdevices=0): # pylint: disable=W0621, W0102
     """Scans your network for Tuya devices and returns dictionary of devices discovered
-        devices = tinytuya.deviceScan(verbose)
+        devices = tinytuya_async.deviceScan(verbose)
 
     Parameters:
         verbose = True or False, print formatted output to stdout [Default: False]
@@ -981,7 +981,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
 
     To unpack data, you can do something like this:
 
-        devices = tinytuya.deviceScan()
+        devices = tinytuya_async.deviceScan()
         for ip in devices:
             id = devices[ip]['gwId']
             key = devices[ip]['productKey']
@@ -990,7 +990,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
 
     """
     # Terminal formatting
-    termcolors = tinytuya.termcolor(color)
+    termcolors = tinytuya_async.termcolor(color)
     #(bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = termcolors
     term = TermColors( *termcolors )
 
@@ -1060,7 +1060,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
         scantime = 0.1
 
     if scantime is None:
-        scantime = tinytuya.SCANTIME
+        scantime = tinytuya_async.SCANTIME
 
     if show_timer is None:
         show_timer = verbose
@@ -1068,7 +1068,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
     if verbose:
         print(
             "\n%sTinyTuya %s(Tuya device scanner)%s [%s]\n"
-            % (term.bold, term.normal, term.dim, tinytuya.__version__)
+            % (term.bold, term.normal, term.dim, tinytuya_async.__version__)
         )
         if havekeys:
             print("%s[Loaded devices.json - %d devices]\n" % (term.dim, len(tuyadevices)))
@@ -1173,7 +1173,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
 
     # If no scantime value set use default
     if not scantime:
-        scantime = 0 if ip_scan_running else tinytuya.SCANTIME
+        scantime = 0 if ip_scan_running else tinytuya_async.SCANTIME
 
     while ip_scan_running or scan_end_time > time.time() or device_end_time > time.time() or connect_next_round:
         if client:
@@ -1340,7 +1340,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
             ip = addr[0]
             result = b''
             try:
-                result = tinytuya.decrypt_udp( data )
+                result = tinytuya_async.decrypt_udp( data )
                 result = json.loads(result)
                 log.debug("Received valid UDP packet: %r", result)
             except:
@@ -1361,7 +1361,7 @@ def devices(verbose=False, scantime=None, color=True, poll=True, forcescan=False
                 continue
 
             # check to see if we have seen this device before and add to devices array
-            #if tinytuya.appenddevice(result, deviceslist) is False:
+            #if tinytuya_async.appenddevice(result, deviceslist) is False:
             if ip not in broadcasted_devices:
                 (dname, dkey, mac) = tuyaLookup(result['gwId'])
                 result["name"] = dname
@@ -1727,12 +1727,12 @@ def snapshot(color=True, assume_yes=False, skip_poll=None):
         skip_poll = True or False, auto-answer 'no' to "Poll local devices?" (overrides assume_yes)
     """
     # Terminal formatting
-    termcolors = tinytuya.termcolor(color)
+    termcolors = tinytuya_async.termcolor(color)
     term = TermColors( *termcolors )
 
     print(
         "\n%sTinyTuya %s(Tuya device scanner)%s [%s]\n"
-        % (term.bold, term.normal, term.dim, tinytuya.__version__)
+        % (term.bold, term.normal, term.dim, tinytuya_async.__version__)
     )
 
     try:
@@ -1799,13 +1799,13 @@ def alldevices(color=True, scantime=None, forcescan=False, discover=True, assume
         color = True or False, print output in color [Default: True]
     """
     # Terminal formatting
-    #(bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = tinytuya.termcolor(color)
-    termcolors = tinytuya.termcolor(color)
+    #(bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = tinytuya_async.termcolor(color)
+    termcolors = tinytuya_async.termcolor(color)
     term = TermColors( *termcolors )
 
     print(
         "\n%sTinyTuya %s(Tuya device scanner)%s [%s]\n"
-        % (term.bold, term.normal, term.dim, tinytuya.__version__)
+        % (term.bold, term.normal, term.dim, tinytuya_async.__version__)
     )
     # Check to see if we have additional Device info
     try:
@@ -1838,7 +1838,7 @@ def alldevices(color=True, scantime=None, forcescan=False, discover=True, assume
     return
 
 def poll_and_display( tuyadevices, color=True, scantime=None, snapshot=False, forcescan=False, discover=True ): # pylint: disable=W0621
-    termcolors = tinytuya.termcolor(color)
+    termcolors = tinytuya_async.termcolor(color)
     term = TermColors( *termcolors )
 
     by_id = [x['id'] for x in tuyadevices]

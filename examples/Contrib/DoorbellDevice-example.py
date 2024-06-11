@@ -5,17 +5,17 @@
 
  Author: JonesMeUp
  Tested: LSC-Bell 8S(AKV300_8M)
- Note: Without hack the device can't be used offline. 
+ Note: Without hack the device can't be used offline.
        With hack the DoorbellDevice is useless.
-        
- For more information see https://github.com/jasonacox/tinytuya
-    https://github.com/jasonacox/tinytuya/issues/162 
-    
-"""
-import tinytuya
-from tinytuya.Contrib import DoorbellDevice
 
-d = DoorbellDevice('abcdefghijklmnop123456', '192.168.178.25', 
+ For more information see https://github.com/jasonacox/tinytuya_async
+    https://github.com/jasonacox/tinytuya_async/issues/162
+
+"""
+import tinytuya_async
+from tinytuya_async.Contrib import DoorbellDevice
+
+d = DoorbellDevice('abcdefghijklmnop123456', '192.168.178.25',
     '1234567890123abc', 'device22')
 d.set_version(3.3)
 d.set_socketPersistent(True) # Keep socket connection open between commands
@@ -31,5 +31,5 @@ while(True):
     print('Data: %r' % data)
     # Send keyalive heartbeat
     print(" > Send Heartbeat Ping < ")
-    payload = d.generate_payload(tinytuya.HEART_BEAT)
+    payload = d.generate_payload(tinytuya_async.HEART_BEAT)
     d.send(payload)

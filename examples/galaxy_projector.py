@@ -2,7 +2,7 @@ import colorsys
 from dataclasses import dataclass
 from typing import Tuple, List, Literal
 
-import tinytuya
+import tinytuya_async
 
 HSV = Tuple[float, float, float]
 
@@ -18,7 +18,7 @@ class GalaxyProjector:
     """
 
     def __init__(self, tuya_device_id: str, device_ip_addr: str, tuya_secret_key: str):
-        self.device = tinytuya.BulbDevice(tuya_device_id, device_ip_addr, tuya_secret_key)
+        self.device = tinytuya_async.BulbDevice(tuya_device_id, device_ip_addr, tuya_secret_key)
         self.device.set_version(3.3)
         self.state = GalaxyProjectorState()
         self.update_state()
@@ -157,12 +157,12 @@ class GalaxyProjectorState:
 
 
 def tuyahex2hsv(val: str):
-    return tinytuya.BulbDevice._hexvalue_to_hsv(val, bulb="B")
+    return tinytuya_async.BulbDevice._hexvalue_to_hsv(val, bulb="B")
 
 
 def hsv2tuyahex(h: float, s: float, v: float):
     (r, g, b) = colorsys.hsv_to_rgb(h, s, v)
-    hexvalue = tinytuya.BulbDevice._rgb_to_hexvalue(
+    hexvalue = tinytuya_async.BulbDevice._rgb_to_hexvalue(
         r * 255.0, g * 255.0, b * 255.0, bulb='B'
     )
     return hexvalue

@@ -5,15 +5,15 @@
  continual loop watching for device updates.
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
 """
 import time
-import tinytuya
+import tinytuya_async
 
-# tinytuya.set_debug(True)
+# tinytuya_async.set_debug(True)
 
-d = tinytuya.OutletDevice('DEVICEID', 'DEVICEIP', 'DEVICEKEY')
+d = tinytuya_async.OutletDevice('DEVICEID', 'DEVICEIP', 'DEVICEKEY')
 d.set_version(3.3)
 d.set_socketPersistent(True)
 
@@ -51,12 +51,12 @@ while(True):
             print(" > Send DPS Update Request < ")
 
             # # Some Tuya devices require a list of DPs to update
-            # payload = d.generate_payload(tinytuya.UPDATEDPS,['18','19','20'])
+            # payload = d.generate_payload(tinytuya_async.UPDATEDPS,['18','19','20'])
             # data = d.send(payload)
             # print('Received Payload: %r' % data)
 
             # # Other devices will not accept the DPS index values for UPDATEDPS - try:
-            # payload = d.generate_payload(tinytuya.UPDATEDPS)
+            # payload = d.generate_payload(tinytuya_async.UPDATEDPS)
             # data = d.send(payload)
             # print('Received Payload: %r' % data)
 

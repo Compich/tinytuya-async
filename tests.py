@@ -13,12 +13,12 @@ import logging
 import struct
 
 # Enable info logging to see version information
-log = logging.getLogger('tinytuya')
+log = logging.getLogger('tinytuya_async')
 logging.basicConfig()  # TODO include function name/line numbers in log
 log.setLevel(level=logging.INFO)
 log.setLevel(level=logging.DEBUG)  # Debug hack!
 
-import tinytuya
+import tinytuya_async
 
 LOCAL_KEY = '0123456789abcdef'
 
@@ -37,37 +37,37 @@ def compare_json_strings(json1, json2, ignoring_keys=None):
 def check_data_frame(data, expected_prefix, encrypted=True):
     prefix = data[:15]
     suffix = data[-8:]
-    
+
     if encrypted:
         payload_len = struct.unpack(">B",data[15:16])[0]  # big-endian, unsigned char
         version = data[16:19]
         checksum = data[19:35]
         encrypted_json = data[35:-8]
-        
-        json_data = tinytuya.AESCipher(LOCAL_KEY.encode(mock_byte_encoding)).decrypt(encrypted_json)
+
+        json_data = tinytuya_async.AESCipher(LOCAL_KEY.encode(mock_byte_encoding)).decrypt(encrypted_json)
     else:
         json_data = data[16:-8].decode(mock_byte_encoding)
-    
+
     frame_ok = True
-    if prefix != tinytuya.hex2bin(expected_prefix):
+    if prefix != tinytuya_async.hex2bin(expected_prefix):
         frame_ok = False
-    elif suffix != tinytuya.hex2bin("000000000000aa55"):
+    elif suffix != tinytuya_async.hex2bin("000000000000aa55"):
         frame_ok = False
     elif encrypted:
         if payload_len != len(version) + len(checksum) + len(encrypted_json) + len(suffix):
             frame_ok = False
         elif version != b"3.1":
             frame_ok = False
-    
+
     return json_data, frame_ok
-            
+
 def mock_send_receive_set_timer(data):
     if mock_send_receive_set_timer.call_counter == 0:
         ret = 20*chr(0x0) + '{"devId":"DEVICE_ID","dps":{"1":false,"2":0}}' + 8*chr(0x0)
     elif mock_send_receive_set_timer.call_counter == 1:
         expected = '{"uid":"DEVICE_ID_HERE","devId":"DEVICE_ID_HERE","t":"","dps":{"2":6666}}'
         json_data, frame_ok = check_data_frame(data, "000055aa0000000000000007000000")
-        
+
         if frame_ok and compare_json_strings(json_data, expected, ['t']):
             ret = '{"test_result":"SUCCESS"}'
         else:
@@ -76,7 +76,7 @@ def mock_send_receive_set_timer(data):
     ret = ret.encode(mock_byte_encoding)
     mock_send_receive_set_timer.call_counter += 1
     return ret
-    
+
 def mock_send_receive_set_status(data):
     expected = '{"dps":{"1":true},"uid":"DEVICE_ID_HERE","t":"1516117564","devId":"DEVICE_ID_HERE"}'
     json_data, frame_ok = check_data_frame(data, "000055aa0000000000000007000000")
@@ -134,7 +134,7 @@ def mock_send_receive_set_white(data):
 
 class TestXenonDevice(unittest.TestCase):
     def test_set_timer(self):
-        d = tinytuya.OutletDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
+        d = tinytuya_async.OutletDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
         d.set_version(3.1)
         d._send_receive = MagicMock(side_effect=mock_send_receive_set_timer)
 
@@ -149,7 +149,7 @@ class TestXenonDevice(unittest.TestCase):
         self.assertEqual(result['test_result'], "SUCCESS")
 
     def test_set_status(self):
-        d = tinytuya.OutletDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
+        d = tinytuya_async.OutletDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
         d.set_version(3.1)
         d._send_receive = MagicMock(side_effect=mock_send_receive_set_status)
 
@@ -161,7 +161,7 @@ class TestXenonDevice(unittest.TestCase):
         self.assertEqual(result['test_result'], "SUCCESS")
 
     def test_status(self):
-        d = tinytuya.OutletDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
+        d = tinytuya_async.OutletDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
         d.set_version(3.1)
         d._send_receive = MagicMock(side_effect=mock_send_receive_status)
 
@@ -169,9 +169,9 @@ class TestXenonDevice(unittest.TestCase):
 
         # Make sure mock_send_receive_set_timer() has been called twice with correct parameters
         self.assertEqual(result['test_result'], "SUCCESS")
-        
+
     def test_set_colour(self):
-        d = tinytuya.BulbDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
+        d = tinytuya_async.BulbDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
         d.set_version(3.1)
         d._send_receive = MagicMock(side_effect=mock_send_receive_set_colour)
 
@@ -182,7 +182,7 @@ class TestXenonDevice(unittest.TestCase):
         self.assertEqual(result['test_result'], "SUCCESS")
 
     def test_set_white(self):
-        d = tinytuya.BulbDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
+        d = tinytuya_async.BulbDevice('DEVICE_ID_HERE', 'IP_ADDRESS_HERE', LOCAL_KEY)
         d.set_version(3.1)
         d._send_receive = MagicMock(side_effect=mock_send_receive_set_white)
 

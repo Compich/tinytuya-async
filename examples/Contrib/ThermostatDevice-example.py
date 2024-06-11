@@ -5,10 +5,10 @@
  Example script using the community-contributed Python module for Tuya WiFi smart thermostats
 
  Author: uzlonewolf (https://github.com/uzlonewolf)
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
 """
-from tinytuya import Contrib
+from tinytuya_async import Contrib
 import time
 
 tstatdev = Contrib.ThermostatDevice( 'abcdefghijklmnop123456', '172.28.321.475', '1234567890123abc' )

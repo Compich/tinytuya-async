@@ -1,4 +1,4 @@
-import tinytuya
+import tinytuya_async
 import time
 
 # Zigbee Gateway support uses a parent/child model where a parent gateway device is
@@ -6,15 +6,15 @@ import time
 
 # configure the parent device
 #   address=None will cause it to search the network for the device
-gw = tinytuya.Device( 'eb...4', address=None, local_key='aabbccddeeffgghh', persist=True, version=3.3 )
+gw = tinytuya_async.Device( 'eb...4', address=None, local_key='aabbccddeeffgghh', persist=True, version=3.3 )
 
 print( 'GW IP found:', gw.address )
 
 # configure one or more children.  Every dev_id must be unique!
 #   cid is the "node_id" from devices.json
 #   node_id can be used as an alias for cid
-zigbee1 = tinytuya.OutletDevice( 'eb14...w', cid='0011223344556601', parent=gw )
-zigbee2 = tinytuya.OutletDevice( 'eb04...l', cid='0011223344556689', parent=gw )
+zigbee1 = tinytuya_async.OutletDevice( 'eb14...w', cid='0011223344556601', parent=gw )
+zigbee2 = tinytuya_async.OutletDevice( 'eb04...l', cid='0011223344556689', parent=gw )
 
 print(zigbee1.status())
 print(zigbee2.status())
@@ -24,7 +24,7 @@ pingtime = time.time() + 9
 
 while(True):
     if( pingtime <= time.time() ):
-        payload = gw.generate_payload(tinytuya.HEART_BEAT)
+        payload = gw.generate_payload(tinytuya_async.HEART_BEAT)
         gw.send(payload)
         pingtime = time.time() + 9
 

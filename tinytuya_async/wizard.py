@@ -4,16 +4,16 @@
 TinyTuya Setup Wizard Tuya based WiFi smart devices
 
 Author: Jason A. Cox
-For more information see https://github.com/jasonacox/tinytuya
+For more information see https://github.com/jasonacox/tinytuya_async
 
 Description
     Setup Wizard will prompt the user for Tuya IoT Developer credentials and will gather all
     registered Device IDs and their Local KEYs.  It will save the credentials and the device
-    data in the tinytuya.json and devices.json configuration files respectively. The Wizard
+    data in the tinytuya_async.json and devices.json configuration files respectively. The Wizard
     will then optionally scan the local devices for status.
 
     HOW to set up your Tuya IoT Developer account: iot.tuya.com:
-    https://github.com/jasonacox/tinytuya#get-the-tuya-device-local-key
+    https://github.com/jasonacox/tinytuya_async#get-the-tuya-device-local-key
 
 Credits
 * Tuya API Documentation
@@ -26,7 +26,7 @@ from __future__ import print_function
 import json
 from colorama import init
 from datetime import datetime
-import tinytuya
+import tinytuya_async
 
 # Backward compatibility for python2
 try:
@@ -38,15 +38,15 @@ except NameError:
 init()
 
 # Configuration Files
-DEVICEFILE = tinytuya.DEVICEFILE
-SNAPSHOTFILE = tinytuya.SNAPSHOTFILE
-CONFIGFILE = tinytuya.CONFIGFILE
-RAWFILE = tinytuya.RAWFILE
+DEVICEFILE = tinytuya_async.DEVICEFILE
+SNAPSHOTFILE = tinytuya_async.SNAPSHOTFILE
+CONFIGFILE = tinytuya_async.CONFIGFILE
+RAWFILE = tinytuya_async.RAWFILE
 
 # Global Network Configs
-DEFAULT_NETWORK = tinytuya.DEFAULT_NETWORK
-TCPTIMEOUT = tinytuya.TCPTIMEOUT    # Seconds to wait for socket open for scanning
-TCPPORT = tinytuya.TCPPORT          # Tuya TCP Local Port
+DEFAULT_NETWORK = tinytuya_async.DEFAULT_NETWORK
+TCPTIMEOUT = tinytuya_async.TCPTIMEOUT    # Seconds to wait for socket open for scanning
+TCPPORT = tinytuya_async.TCPPORT          # Tuya TCP Local Port
 
 def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=False, discover=True, credentials=None, skip_poll=None):
     """
@@ -60,10 +60,10 @@ def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=
     Description
         Setup Wizard will prompt user for Tuya IoT Developer credentials and will gather all of
         the Device IDs and their Local KEYs.  It will save the credentials and the device
-        data in the tinytuya.json and devices.json configuration files respectively.
+        data in the tinytuya_async.json and devices.json configuration files respectively.
 
         HOW to set up your Tuya IoT Developer account: iot.tuya.com:
-        https://github.com/jasonacox/tinytuya#get-the-tuya-device-local-key
+        https://github.com/jasonacox/tinytuya_async#get-the-tuya-device-local-key
 
     Credits
     * Tuya API Documentation
@@ -114,9 +114,9 @@ def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=
     except:
         old_devices = {}
 
-    (bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = tinytuya.termcolor(color)
+    (bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = tinytuya_async.termcolor(color)
 
-    print(bold + 'TinyTuya Setup Wizard' + dim + ' [%s]' % (tinytuya.version) + normal)
+    print(bold + 'TinyTuya Setup Wizard' + dim + ' [%s]' % (tinytuya_async.version) + normal)
     print('')
 
     if (needconfigs and config['apiKey'] != '' and config['apiSecret'] != '' and
@@ -166,7 +166,7 @@ def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=
         if 'apiDeviceID' in config and config['apiDeviceID'] and config['apiDeviceID'].strip().lower() == 'scan':
             config['apiDeviceID'] = ''
             print( '\nScanning to find a Device ID...' )
-            dev = tinytuya.scanner.devices( verbose=False, poll=False, byID=True, show_timer=False, maxdevices=1 )
+            dev = tinytuya_async.scanner.devices( verbose=False, poll=False, byID=True, show_timer=False, maxdevices=1 )
             for devid in dev:
                 print( '\nScan found Device ID %r' % devid )
                 config['apiDeviceID'] = devid
@@ -175,7 +175,7 @@ def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=
                 print('\n\n' + bold + 'Scan failed to detect a device, please enter a Device ID manually' )
                 return
 
-        cloud = tinytuya.Cloud( **config )
+        cloud = tinytuya_async.Cloud( **config )
 
         # on auth error getdevices() will implode
         if cloud.error:
@@ -258,7 +258,7 @@ def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=
             'description': 'Full raw list of Tuya devices.',
             'account': cloud.apiKey,
             'date': datetime.now().isoformat(),
-            'tinytuya': tinytuya.version
+            'tinytuya_async': tinytuya_async.version
         }
         try:
             with open(RAWFILE, "w") as outfile:
@@ -274,8 +274,8 @@ def wizard(color=True, retries=None, forcescan=False, nocloud=False, assume_yes=
     else:
         answer = input(subbold + '\nPoll local devices? ' + normal + '(Y/n): ')
     if answer.lower().find('n') < 0:
-        tinytuya.scanner.SNAPSHOTFILE = SNAPSHOTFILE
-        result = tinytuya.scanner.poll_and_display( tuyadevices, color=color, scantime=retries, snapshot=True, forcescan=forcescan )
+        tinytuya_async.scanner.SNAPSHOTFILE = SNAPSHOTFILE
+        result = tinytuya_async.scanner.poll_and_display( tuyadevices, color=color, scantime=retries, snapshot=True, forcescan=forcescan )
         iplist = {}
         found = 0
         for itm in result:

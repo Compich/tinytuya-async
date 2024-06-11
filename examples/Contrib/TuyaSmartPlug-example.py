@@ -1,35 +1,35 @@
 # TinyTuya Smart Plug 1-Pack Example
 # -*- coding: utf-8 -*-
 """
- Example script using the tinytuya Python module for Tuya Smart Plug 1-Pack
+ Example script using the tinytuya_async Python module for Tuya Smart Plug 1-Pack
  and stores data in mysql database.
 
  Author: fajarmnrozaki (https://github.com/fajarmnrozaki)
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 """
 
 # Import library
 import datetime
-import tinytuya # code packet for communication between Tuya devices
+import tinytuya_async # code packet for communication between Tuya devices
 import time # RTC Real Time Clock
 import pymysql # library for sql
 
 # Specifications of Network scanner (the device Tuya must be turned "ON")
 Device_Id = 'xxxxxxxxxxxxxxxxxx' # Device Id from Tuya device sensor
 Address_Id = 'x.x.x.x' # IP Address connected to Tuya device sensor
-Local_Key = 'xxxxxxxxxxxxxxxx' # Local Key generated from  python -m tinytuya wizard
+Local_Key = 'xxxxxxxxxxxxxxxx' # Local Key generated from  python -m tinytuya_async wizard
 Version = 3.3 #Version of Tuya protocol used
 
 # Checking the connection "Tuya device - sensor"
 try:
-    smartplug = tinytuya.OutletDevice(Device_Id, Address_Id, Local_Key)
+    smartplug = tinytuya_async.OutletDevice(Device_Id, Address_Id, Local_Key)
     smartplug.set_version(Version)
     print("Connected to Tuya device sensor")
 except:
     print("Disconnected to Tuya device sensor")
     smartplug.close()
 
-# Monitoring a Tuya Smart Plug Device Sensor 
+# Monitoring a Tuya Smart Plug Device Sensor
 while True:
     try:
         # Time

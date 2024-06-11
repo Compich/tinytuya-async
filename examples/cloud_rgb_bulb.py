@@ -7,10 +7,12 @@
  to access the Tuya Cloud to control an RGB Smart Bulb
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
-""" 
-import tinytuya
+"""
+import asyncio
+
+import tinytuya_async
 import colorsys
 import time
 
@@ -18,11 +20,11 @@ import time
 id = DEVICEID
 cmd_code = 'colour_data_v2'  # look at c.getstatus(id) to see what code should be used
 
-# Connect to Tuya Cloud - uses tinytuya.json 
-c = tinytuya.Cloud()
+# Connect to Tuya Cloud - uses tinytuya_async.json
+c = tinytuya_async.Cloud()
 
 # Function to set color via RGB values - Bulb type B
-def set_color(rgb):
+async def set_color(rgb):
     hsv = colorsys.rgb_to_hsv(rgb[0] / 255.0, rgb[1] / 255.0, rgb[2] / 255.0)
     commands = {
         'commands': [{
@@ -34,15 +36,19 @@ def set_color(rgb):
             }
         }]
     }
-    c.sendcommand(id, commands)
+    await c.sendcommand(id, commands)
 
 # Rainbow values
 rainbow = {"red": (255, 0, 0), "orange": (255, 127, 0), "yellow": (255, 200, 0),
            "green": (0, 255, 0), "blue": (0, 0, 255), "indigo": (46, 43, 95),
            "violet": (139, 0, 255)}
 
-# Rotate through the rainbow
-for color in rainbow:
-    print("Changing color to %s" % color)
-    set_color(rainbow[color])
-    time.sleep(5)
+async def main():
+    # Rotate through the rainbow
+    for color in rainbow:
+        print("Changing color to %s" % color)
+        set_color(rainbow[color])
+        time.sleep(5)
+
+
+asyncio.run(main())

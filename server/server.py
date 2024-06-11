@@ -5,7 +5,7 @@ TinyTuya API Server for Tuya based WiFi smart devices
 
 Author: Jason A. Cox
 Date: June 11, 2023
-For more information see https://github.com/jasonacox/tinytuya
+For more information see https://github.com/jasonacox/tinytuya_async
 
 Description
     Server continually listens for Tuya UDP discovery packets and updates the database of devices
@@ -32,16 +32,18 @@ Description
 
 # Modules
 from __future__ import print_function
+
+import asyncio
 import threading
 import time
 import logging
 import json
 import socket
 try:
-    import requests
+    import aiohttp
 except ImportError as impErr:
-    print("WARN: Unable to import requests library, Cloud functions will not work.")
-    print("WARN: Check dependencies. See https://github.com/jasonacox/tinytuya/issues/377")
+    print("WARN: Unable to import aiohttp library, Cloud functions will not work.")
+    print("WARN: Check dependencies. See https://github.com/jasonacox/tinytuya_async/issues/377")
     print("WARN: Error: {}.".format(impErr.args[0]))
 import resource
 import signal
@@ -49,7 +51,7 @@ import sys
 import os
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
-from socketserver import ThreadingMixIn 
+from socketserver import ThreadingMixIn
 
 # Terminal color capability for all platforms
 try:
@@ -58,23 +60,23 @@ try:
 except:
     pass
 
-import tinytuya
+import tinytuya_async
 
 BUILD = "t11"
 
 # Defaults
 APIPORT = 8888
 DEBUGMODE = False
-DEVICEFILE = tinytuya.DEVICEFILE
-SNAPSHOTFILE = tinytuya.SNAPSHOTFILE
-CONFIGFILE = tinytuya.CONFIGFILE
-TCPTIMEOUT = tinytuya.TCPTIMEOUT    # Seconds to wait for socket open for scanning
-TCPPORT = tinytuya.TCPPORT          # Tuya TCP Local Port
-MAXCOUNT = tinytuya.MAXCOUNT        # How many tries before stopping
-UDPPORT = tinytuya.UDPPORT          # Tuya 3.1 UDP Port
-UDPPORTS = tinytuya.UDPPORTS        # Tuya 3.3 encrypted UDP Port
-UDPPORTAPP = tinytuya.UDPPORTAPP    # Tuya App
-TIMEOUT = tinytuya.TIMEOUT          # Socket Timeout
+DEVICEFILE = tinytuya_async.DEVICEFILE
+SNAPSHOTFILE = tinytuya_async.SNAPSHOTFILE
+CONFIGFILE = tinytuya_async.CONFIGFILE
+TCPTIMEOUT = tinytuya_async.TCPTIMEOUT    # Seconds to wait for socket open for scanning
+TCPPORT = tinytuya_async.TCPPORT          # Tuya TCP Local Port
+MAXCOUNT = tinytuya_async.MAXCOUNT        # How many tries before stopping
+UDPPORT = tinytuya_async.UDPPORT          # Tuya 3.1 UDP Port
+UDPPORTS = tinytuya_async.UDPPORTS        # Tuya 3.3 encrypted UDP Port
+UDPPORTAPP = tinytuya_async.UDPPORTAPP    # Tuya App
+TIMEOUT = tinytuya_async.TIMEOUT          # Socket Timeout
 RETRYTIME = 30
 RETRYCOUNT = 5
 SAVEDEVICEFILE = True
@@ -90,12 +92,12 @@ if len(sys.argv) > 1 and sys.argv[1].startswith("-d"):
     DEBUGMODE = True
 if DEBUGMODE:
     logging.basicConfig(
-        format="\x1b[31;1m%(levelname)s [%(asctime)s]:%(message)s\x1b[0m", level=logging.DEBUG, 
+        format="\x1b[31;1m%(levelname)s [%(asctime)s]:%(message)s\x1b[0m", level=logging.DEBUG,
         datefmt='%d/%b/%y %H:%M:%S'
     )
     log.setLevel(logging.DEBUG)
     log.debug("TinyTuya Server [%s]", BUILD)
-    tinytuya.set_debug(True)
+    tinytuya_async.set_debug(True)
 
 # Signal handler - Exit on SIGTERM
 def sig_term_handle(signum, frame):
@@ -108,13 +110,13 @@ web_root = os.path.join(os.path.dirname(__file__), "web")
 
 # Global Stats
 serverstats = {}
-serverstats['tinytuya'] = "%s%s" % (tinytuya.version, BUILD)
+serverstats['tinytuya_async'] = "%s%s" % (tinytuya_async.version, BUILD)
 serverstats['gets'] = 0
 serverstats['errors'] = 0
 serverstats['timeout'] = 0
 serverstats['api'] = {}
 serverstats['ts'] = int(time.time())         # Timestamp for Now
-serverstats['start'] = int(time.time())      # Timestamp for Start 
+serverstats['start'] = int(time.time())      # Timestamp for Start
 
 # Global Variables
 running = True
@@ -127,7 +129,7 @@ cloudconfig = {'apiKey':'', 'apiSecret':'', 'apiRegion':'', 'apiDeviceID':''}
 
 
 # Terminal formatting
-(bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = tinytuya.termcolor(True)
+(bold, subbold, normal, dim, alert, alertdim, cyan, red, yellow) = tinytuya_async.termcolor(True)
 
 # Helpful Functions
 
@@ -156,7 +158,7 @@ def offlineDevices():
         id = d["id"]
         if id not in deviceslist:
             offline[id] = {}
-            offline[id]["name"] = d["name"] 
+            offline[id]["name"] = d["name"]
             if "mac" in d:
                 offline[id]["mac"] = d["mac"]
     return offline
@@ -245,7 +247,7 @@ def tuyaCloudRefresh():
         return {'Error': 'Cloud API config missing'}
 
     global tuyadevices
-    cloud = tinytuya.Cloud( **cloudconfig )
+    cloud = tinytuya_async.Cloud( **cloudconfig )
     # on auth error, getdevices() will implode
     if cloud.error:
         return cloud.error
@@ -265,12 +267,12 @@ def getDeviceIdByName(name):
 # Threads
 def tuyalisten(port):
     """
-    Thread to listen for Tuya devices UDP broadcast on port 
+    Thread to listen for Tuya devices UDP broadcast on port
     """
     log.debug("Started tuyalisten thread on %d", port)
     print(" - tuyalisten %d Running" % port)
 
-    # Enable UDP listening broadcasting mode on UDP port 
+    # Enable UDP listening broadcasting mode on UDP port
     client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     try:
@@ -292,7 +294,7 @@ def tuyalisten(port):
         gwId = dname = dkey = mac = ""
         result = data
         try:
-            result = tinytuya.decrypt_udp( data )
+            result = tinytuya_async.decrypt_udp( data )
             result = json.loads(result)
             #log.debug("Received valid UDP packet: %r", result)
             ip = result["ip"]
@@ -348,7 +350,7 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         message = "Error"
         contenttype = 'application/json'
-        # Send headers and payload  
+        # Send headers and payload
         self.send_header('Content-type',contenttype)
         self.send_header('Content-Length', str(len(message)))
         self.end_headers()
@@ -408,7 +410,7 @@ class handler(BaseHTTPRequestHandler):
                                         break
                 log.debug("Set dpsKey: %s dpsValue: %s" % (dpsKey,dpsValue))
                 if(id in deviceslist):
-                    d = tinytuya.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
+                    d = tinytuya_async.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
                     d.set_version(float(deviceslist[id]["version"]))
                     message = formatreturn(d.set_value(dpsKey,dpsValue,nowait=True))
                     d.close()
@@ -426,7 +428,7 @@ class handler(BaseHTTPRequestHandler):
                 message = json.dumps(deviceslist[id])
             else:
                 jout={}
-                [name, key, mac] = tuyaLookup(id) 
+                [name, key, mac] = tuyaLookup(id)
                 if name != "":
                     jout["name"] = name
                     jout["mac"] = mac
@@ -450,7 +452,7 @@ class handler(BaseHTTPRequestHandler):
                 id = getDeviceIdByName(id)
             if id in deviceslist:
                 try:
-                    d = tinytuya.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
+                    d = tinytuya_async.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
                     d.set_version(float(deviceslist[id]["version"]))
                     message = formatreturn(d.turn_off(switch=sw, nowait=True))
                     d.close()
@@ -458,8 +460,8 @@ class handler(BaseHTTPRequestHandler):
                     message = json.dumps({"Error": "Error sending command to device.", "id": id})
                     log.debug("Error sending command to device: %s" % id)
             elif id != "":
-                message = json.dumps({"Error": "Device ID not found.", "id": id})      
-                log.debug("Device ID not found: %s" % id)      
+                message = json.dumps({"Error": "Device ID not found.", "id": id})
+                log.debug("Device ID not found: %s" % id)
         elif self.path.startswith('/delayoff/'):
             id = self.path.split('/delayoff/')[1]
             sw = 1
@@ -475,7 +477,7 @@ class handler(BaseHTTPRequestHandler):
                 id = getDeviceIdByName(id)
             if id in deviceslist:
                 try:
-                    d = tinytuya.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
+                    d = tinytuya_async.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
                     d.set_version(float(deviceslist[id]["version"]))
 
                     timer = threading.Timer(int(delay), delayoff, args = (d, sw))
@@ -502,7 +504,7 @@ class handler(BaseHTTPRequestHandler):
                 id = getDeviceIdByName(id)
             if id in deviceslist:
                 try:
-                    d = tinytuya.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
+                    d = tinytuya_async.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
                     d.set_version(float(deviceslist[id]["version"]))
                     message = formatreturn(d.turn_on(switch=sw, nowait=True))
                     d.close()
@@ -510,8 +512,8 @@ class handler(BaseHTTPRequestHandler):
                     message = json.dumps({"Error": "Error sending command to device.", "id": id})
                     log.debug("Error sending command to device %s" % id)
             elif id != "":
-                message = json.dumps({"Error": "Device ID not found.", "id": id})     
-                log.debug("Device ID not found: %s" % id)        
+                message = json.dumps({"Error": "Device ID not found.", "id": id})
+                log.debug("Device ID not found: %s" % id)
         elif self.path == '/numdevices':
             jout = {}
             jout["found"] = len(deviceslist)
@@ -523,7 +525,7 @@ class handler(BaseHTTPRequestHandler):
                 id = getDeviceIdByName(id)
             if(id in deviceslist):
                 try:
-                    d = tinytuya.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
+                    d = tinytuya_async.OutletDevice(id, deviceslist[id]["ip"], deviceslist[id]["key"])
                     d.set_version(float(deviceslist[id]["version"]))
                     response = d.status()
                     for x in tuyadevices:
@@ -540,7 +542,7 @@ class handler(BaseHTTPRequestHandler):
                     log.debug("Error polling device %s" % id)
             else:
                 message = json.dumps({"Error": "Device ID not found.", "id": id})
-                log.debug("Device ID not found: %s" % id)  
+                log.debug("Device ID not found: %s" % id)
         elif self.path == '/sync':
             message = json.dumps(tuyaCloudRefresh())
             retrytimer = time.time() + RETRYTIME
@@ -571,7 +573,7 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(fcontent)
                 return
 
-        # Counts 
+        # Counts
         if "Error" in message:
             serverstats['errors'] = serverstats['errors'] + 1
         serverstats['gets'] = serverstats['gets'] + 1
@@ -584,7 +586,7 @@ class handler(BaseHTTPRequestHandler):
 
 def api(port):
     """
-    API Server - Thread to listen for commands on port 
+    API Server - Thread to listen for commands on port
     """
     log.debug("Started api server thread on %d", port)
     print(" - api %d Running" % port)
@@ -599,6 +601,9 @@ def api(port):
     print(' - api', port, 'Exit')
     log.debug("API server thread on %d stopped", port)
 
+async def stop():
+    async with aiohttp.ClientSession() as session:
+        await session.get('http://localhost:%d/stop' % APIPORT)
 # MAIN Thread
 if __name__ == "__main__":
     # creating thread
@@ -606,10 +611,10 @@ if __name__ == "__main__":
     tuyaUDPs = threading.Thread(target=tuyalisten, args=(UDPPORTS,))
     tuyaUDP7 = threading.Thread(target=tuyalisten, args=(UDPPORTAPP,))
     apiServer = threading.Thread(target=api, args=(APIPORT,))
-    
+
     print(
         "\n%sTinyTuya %s(Server)%s [%s%s]\n"
-        % (bold, normal, dim, tinytuya.__version__, BUILD)
+        % (bold, normal, dim, tinytuya_async.__version__, BUILD)
     )
     if len(tuyadevices) > 0:
         print("%s[Loaded devices.json - %d devices]%s\n" % (dim, len(tuyadevices), normal))
@@ -626,7 +631,7 @@ if __name__ == "__main__":
 
     print(" * API and UI Endpoint on http://localhost:%d" % APIPORT)
     log.debug("Server URL http://localhost:%d" % APIPORT)
-    
+
     try:
         while(True):
             log.debug("Discovered Devices: %d   " % len(deviceslist))
@@ -671,4 +676,4 @@ if __name__ == "__main__":
         # Close down API thread
         print("Stopping threads...")
         log.debug("Stoppping threads")
-        requests.get('http://localhost:%d/stop' % APIPORT)
+        asyncio.run(stop())

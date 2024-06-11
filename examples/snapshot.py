@@ -4,10 +4,10 @@
  TinyTuya - Example script that uses the snapshot.json to manage Tuya Devices
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 """
 
-import tinytuya
+import tinytuya_async
 import json
 import time
 
@@ -30,9 +30,9 @@ for item in data["devices"]:
     if item["ip"] == "":
         print("No IP Address - Skipping")
     else:
-        d = tinytuya.OutletDevice(item["id"], item["ip"], item["key"])
+        d = tinytuya_async.OutletDevice(item["id"], item["ip"], item["key"])
         d.set_version(float(item["ver"]))
-        status = d.status()  
+        status = d.status()
         print(status)
 
 # Turn on a device by name
@@ -42,7 +42,7 @@ def turn_on(name):
         if item["name"] == name:
             break
     print("\nTurning On: %s" % item["name"])
-    d = tinytuya.OutletDevice(item["id"], item["ip"], item["key"])
+    d = tinytuya_async.OutletDevice(item["id"], item["ip"], item["key"])
     d.set_version(float(item["ver"]))
     d.set_status(True)
 
@@ -53,7 +53,7 @@ def turn_off(name):
         if item["name"] == name:
             break
     print("\nTurning Off: %s" % item["name"])
-    d = tinytuya.OutletDevice(item["id"], item["ip"], item["key"])
+    d = tinytuya_async.OutletDevice(item["id"], item["ip"], item["key"])
     d.set_version(float(item["ver"]))
     d.set_status(False)
 
@@ -61,4 +61,3 @@ def turn_off(name):
 turn_off('Dining Room')
 time.sleep(2)
 turn_on('Dining Room')
-

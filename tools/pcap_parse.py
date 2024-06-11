@@ -7,7 +7,7 @@
 
  Requires the dpkt module for PCAP parsing.
 
- Written by uzlonewolf (https://github.com/uzlonewolf) for the TinyTuya project https://github.com/jasonacox/tinytuya
+ Written by uzlonewolf (https://github.com/uzlonewolf) for the TinyTuya project https://github.com/jasonacox/tinytuya_async
 
  Call with "-h" for options.
  The "-s" option is designed to make the output display nice when sorted, i.e. `python3 pcap_parse.py ... | sort`
@@ -35,20 +35,20 @@ import struct
 from hashlib import md5,sha256
 import hmac
 
-import tinytuya
+import tinytuya_async
 
 devices = {}
 
 def pop_packet_from_data( data, from_dev ):
-    min_len_55AA = struct.calcsize(tinytuya.MESSAGE_HEADER_FMT_55AA) + 4 + 4 + len(tinytuya.SUFFIX_BIN)
-    min_len_6699 = struct.calcsize(tinytuya.MESSAGE_HEADER_FMT_6699) + 12 + 4 + 16 + len(tinytuya.SUFFIX_BIN)
+    min_len_55AA = struct.calcsize(tinytuya_async.MESSAGE_HEADER_FMT_55AA) + 4 + 4 + len(tinytuya_async.SUFFIX_BIN)
+    min_len_6699 = struct.calcsize(tinytuya_async.MESSAGE_HEADER_FMT_6699) + 12 + 4 + 16 + len(tinytuya_async.SUFFIX_BIN)
     min_len = min_len_55AA if min_len_55AA < min_len_6699 else min_len_6699
-    prefix_len = len( tinytuya.PREFIX_55AA_BIN )
+    prefix_len = len( tinytuya_async.PREFIX_55AA_BIN )
 
     # search for the prefix.  if not found, delete everything except
     # the last (prefix_len - 1) bytes and recv more to replace it
-    prefix_offset_55AA = data.find( tinytuya.PREFIX_55AA_BIN )
-    prefix_offset_6699 = data.find( tinytuya.PREFIX_6699_BIN )
+    prefix_offset_55AA = data.find( tinytuya_async.PREFIX_55AA_BIN )
+    prefix_offset_6699 = data.find( tinytuya_async.PREFIX_6699_BIN )
 
     if prefix_offset_55AA != 0 and prefix_offset_6699 != 0:
         print('Message prefix not at the beginning of the received data!')
@@ -58,18 +58,18 @@ def pop_packet_from_data( data, from_dev ):
 
         if prefix_offset_55AA < 0:
             prefix_offset = prefix_offset_6699 # if prefix_offset_55AA < 0 else prefix_offset_55AA
-            prefix = tinytuya.PREFIX_6699_BIN
+            prefix = tinytuya_async.PREFIX_6699_BIN
         else:
             prefix_offset = prefix_offset_55AA
-            prefix = tinytuya.PREFIX_55AA_BIN
+            prefix = tinytuya_async.PREFIX_55AA_BIN
 
         data = data[prefix_offset:]
     elif prefix_offset_55AA == 0:
-        prefix = tinytuya.PREFIX_55AA_BIN
+        prefix = tinytuya_async.PREFIX_55AA_BIN
     else:
-        prefix = tinytuya.PREFIX_6699_BIN
+        prefix = tinytuya_async.PREFIX_6699_BIN
 
-    header = tinytuya.parse_header(data)
+    header = tinytuya_async.parse_header(data)
     remaining = header.total_length - len(data)
     if remaining > 0:
         return None, None, prefix, data
@@ -94,7 +94,7 @@ def process_data( data, from_dev, devinfo, flow, args ):
                 flow['ver'] = float( devinfo['version'] )
             elif 'ver' in devinfo:
                 flow['ver'] = devinfo['ver']
-            elif( prefix == tinytuya.PREFIX_6699_BIN ):
+            elif( prefix == tinytuya_async.PREFIX_6699_BIN ):
                 flow['ver'] = 3.5
             else:
                 flow['ver'] = 0
@@ -112,16 +112,16 @@ def process_data( data, from_dev, devinfo, flow, args ):
 
         if not flow['ver']:
             # try <=3.3
-            packet = tinytuya.unpack_message(pdata, header=header, hmac_key=None, no_retcode=(not from_dev))
+            packet = tinytuya_async.unpack_message(pdata, header=header, hmac_key=None, no_retcode=(not from_dev))
             if( not packet.crc_good ):
                 # next try v3.4
-                try2 = tinytuya.unpack_message(pdata, header=header, hmac_key=devinfo['key'], no_retcode=True)
+                try2 = tinytuya_async.unpack_message(pdata, header=header, hmac_key=devinfo['key'], no_retcode=True)
                 if try2.crc_good:
                     print( '%s %-11s %s' % (src_str, '', '<Auto-detected v3.4 device>') )
                     flow['ver'] = 3.4
                     packet = try2
         if flow['ver'] <= 3.3:
-            packet = tinytuya.unpack_message(pdata, header=header, hmac_key=None, no_retcode=(not from_dev))
+            packet = tinytuya_async.unpack_message(pdata, header=header, hmac_key=None, no_retcode=(not from_dev))
             payload = packet.payload
 
             if not flow['ver']:
@@ -139,7 +139,7 @@ def process_data( data, from_dev, devinfo, flow, args ):
                 pass
             else: # 3.2 or 3.3
                 if( payload.startswith( str(flow['ver']).encode('utf8') ) ):
-                    headlen = len(tinytuya.PROTOCOL_3x_HEADER)+3
+                    headlen = len(tinytuya_async.PROTOCOL_3x_HEADER)+3
                     head = payload[:headlen]
                     enc = payload[headlen:]
                 else:
@@ -147,7 +147,7 @@ def process_data( data, from_dev, devinfo, flow, args ):
                     enc = payload
 
                 try:
-                    payload = head + tinytuya.AESCipher( devinfo['key'] ).decrypt(enc, False).encode('utf8')
+                    payload = head + tinytuya_async.AESCipher( devinfo['key'] ).decrypt(enc, False).encode('utf8')
                 except:
                     traceback.print_exc()
                     print(enc, packet)
@@ -156,7 +156,7 @@ def process_data( data, from_dev, devinfo, flow, args ):
             if 'session_key' not in flow:
                 flow['session_key'] = b''
 
-            if( (header.cmd >= tinytuya.SESS_KEY_NEG_START) and (header.cmd <= tinytuya.SESS_KEY_NEG_FINISH) ):
+            if( (header.cmd >= tinytuya_async.SESS_KEY_NEG_START) and (header.cmd <= tinytuya_async.SESS_KEY_NEG_FINISH) ):
                 hmac_key = devinfo['key']
             elif not flow['session_key']:
                 print( '%s %-15s %s' % (src_str, cmd_str, '<Error: No Session Key for stream!  The 3-way handshake needs to be captured to decrypt v3.4+ device streams!') )
@@ -164,9 +164,9 @@ def process_data( data, from_dev, devinfo, flow, args ):
             else:
                 hmac_key = flow['session_key']
 
-            packet = tinytuya.unpack_message(pdata, header=header, hmac_key=hmac_key, no_retcode=(not from_dev))
+            packet = tinytuya_async.unpack_message(pdata, header=header, hmac_key=hmac_key, no_retcode=(not from_dev))
             if( (not packet.crc_good) and (hmac_key != devinfo['key']) ):
-                try2 = tinytuya.unpack_message(pdata, header=header, hmac_key=devinfo['key'], no_retcode=True)
+                try2 = tinytuya_async.unpack_message(pdata, header=header, hmac_key=devinfo['key'], no_retcode=True)
                 if try2.crc_good:
                     packet = try2
                     flow['session_key'] = b''
@@ -176,17 +176,17 @@ def process_data( data, from_dev, devinfo, flow, args ):
                 payload = packet.payload
                 if flow['ver'] == 3.4 and len(payload):
                     try:
-                        payload = tinytuya.AESCipher( hmac_key ).decrypt(payload, False, decode_text=False)
+                        payload = tinytuya_async.AESCipher( hmac_key ).decrypt(payload, False, decode_text=False)
                     except:
                         print("v3.4 decrypt payload failed, payload=%r (len:%d)" % (payload, len(payload)))
                         payload = b''
 
-                if( packet.cmd == tinytuya.SESS_KEY_NEG_START ):
+                if( packet.cmd == tinytuya_async.SESS_KEY_NEG_START ):
                     payload_str = '<Negotiate Session Key Step 1>'
                     flow['session_key'] = b''
                     flow['device_nonce'] = b''
                     flow['client_nonce'] = payload
-                elif( packet.cmd == tinytuya.SESS_KEY_NEG_RESP ):
+                elif( packet.cmd == tinytuya_async.SESS_KEY_NEG_RESP ):
                     payload_str = '<Negotiate Session Key Step 2>'
                     flow['session_key'] = b''
                     flow['device_nonce'] = payload[:16]
@@ -196,7 +196,7 @@ def process_data( data, from_dev, devinfo, flow, args ):
                         payload_str += ' session key step 2 HMAC verify fail!'
                     else:
                         payload_str += ' session key step 2 HMAC verify OK!'
-                elif( packet.cmd == tinytuya.SESS_KEY_NEG_FINISH ):
+                elif( packet.cmd == tinytuya_async.SESS_KEY_NEG_FINISH ):
                     payload_str = '<Negotiate Session Key Step 3>'
                     hmac_check = hmac.new( devinfo['key'], flow['device_nonce'], sha256).digest()
                     if( payload != hmac_check ):
@@ -211,19 +211,19 @@ def process_data( data, from_dev, devinfo, flow, args ):
                         flow['session_key'] = ''.join(k)
 
                     if flow['ver'] == 3.4:
-                        flow['session_key'] = tinytuya.AESCipher( devinfo['key'] ).encrypt( flow['session_key'], False, pad=False )
+                        flow['session_key'] = tinytuya_async.AESCipher( devinfo['key'] ).encrypt( flow['session_key'], False, pad=False )
                     else:
                         iv = flow['client_nonce'][:12]
                         print("Session IV:", iv)
-                        flow['session_key'] = tinytuya.AESCipher( devinfo['key'] ).encrypt( flow['session_key'], use_base64=False, pad=False, iv=iv )[12:28]
+                        flow['session_key'] = tinytuya_async.AESCipher( devinfo['key'] ).encrypt( flow['session_key'], use_base64=False, pad=False, iv=iv )[12:28]
 
-        if( len(packet.payload) == 0 and args.hide_zero_len and packet.cmd == tinytuya.HEART_BEAT ):
+        if( len(packet.payload) == 0 and args.hide_zero_len and packet.cmd == tinytuya_async.HEART_BEAT ):
             continue
         elif not packet.crc_good:
             print( output_prefix, packet )
         else:
             cmd_str += ' len(%d)' % len(packet.payload)
-            if( flow['ver'] < 3.4 or (packet.cmd < tinytuya.SESS_KEY_NEG_START) or (packet.cmd > tinytuya.SESS_KEY_NEG_FINISH) ):
+            if( flow['ver'] < 3.4 or (packet.cmd < tinytuya_async.SESS_KEY_NEG_START) or (packet.cmd > tinytuya_async.SESS_KEY_NEG_FINISH) ):
                 if all((char <= 0x7E and char >= 0x20) for char in payload):
                     payload_str = payload.decode('utf8')
                 else:
@@ -284,7 +284,7 @@ def process_pcap( pcap_file, args ):
                     data = eth.ip.udp.data
                     devmac = mac_to_str( eth.src )
                     devip = inet_to_str( eth.ip.src )
-                    payload = json.loads( tinytuya.decrypt_udp( data ) )
+                    payload = json.loads( tinytuya_async.decrypt_udp( data ) )
                     did, dkey, dver = get_key( dev=payload['gwId'], mac=devmac )
                     payload['id'] = did
                     payload['key'] = dkey.encode('utf8')
@@ -398,5 +398,3 @@ if __name__ == '__main__':
         args.fnum += 1
         args.fnum_str = fnum_format % args.fnum
         process_pcap( pf, args )
-
-    

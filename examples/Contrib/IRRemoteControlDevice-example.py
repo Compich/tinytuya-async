@@ -6,15 +6,14 @@
 
  Author: Alexey 'Cluster' Avdyukhin (https://github.com/clusterm)
  Rewritten by: uzlonewolf (https://github.com/uzlonewolf)
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
 """
 import sys
-import tinytuya
-from tinytuya import Contrib
+from tinytuya_async import Contrib
 from time import sleep
 
-#tinytuya.set_debug(toggle=True, color=True)
+#tinytuya_async.set_debug(toggle=True, color=True)
 
 
 

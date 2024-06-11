@@ -6,12 +6,12 @@
  Python module to interface with Tuya WiFi smart devices
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
  Run TinyTuya Setup Wizard:
-    python -m tinytuya wizard
+    python -m tinytuya_async wizard
  This network scan will run if calling this module via command line:
-    python -m tinytuya <max_time>
+    python -m tinytuya_async <max_time>
 
 """
 
@@ -26,7 +26,7 @@ except:
 
 from . import wizard, scanner, version, SCANTIME, DEVICEFILE, SNAPSHOTFILE, CONFIGFILE, RAWFILE, set_debug
 
-prog = 'python3 -m tinytuya' if sys.argv[0][-11:] == '__main__.py' else None
+prog = 'python3 -m tinytuya_async' if sys.argv[0][-11:] == '__main__.py' else None
 description = 'TinyTuya [%s]' % (version,)
 parser = argparse.ArgumentParser( prog=prog, description=description )
 

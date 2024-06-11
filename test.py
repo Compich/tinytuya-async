@@ -3,16 +3,16 @@
  TinyTuya test for OutletDevice
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 """
 import sys
 import os
 import time
-import tinytuya
+import tinytuya_async
 
 # Read command line options or set defaults
 if (len(sys.argv) < 2) and not (("PLUGID" in os.environ) or ("PLUGIP" in os.environ)):
-    print("TinyTuya (Tuya Interface) [%s]"%tinytuya.__version__)
+    print("TinyTuya (Tuya Interface) [%s]"%tinytuya_async.__version__)
     print("Usage: %s <DEVICEID> <DEVICEIP> <DEVICEKEY> <DEVICEVERS>\n" % sys.argv[0])
     print("    Required: <DEVICEID> is the Device ID e.g. 01234567891234567890")
     print("              <DEVICEIP> is the IP address of the smart plug e.g. 10.0.1.99")
@@ -26,13 +26,13 @@ DEVICEIP = sys.argv[2] if len(sys.argv) >= 3 else "10.0.1.99"
 DEVICEKEY = sys.argv[3] if len(sys.argv) >= 4 else "0123456789abcdef"
 DEVICEVERS = sys.argv[4] if len(sys.argv) >= 5 else "3.1"
 
-# Check for environmental variables and always use those if available 
+# Check for environmental variables and always use those if available
 DEVICEID = os.getenv("DEVICEID", DEVICEID)
 DEVICEIP = os.getenv("DEVICEIP", DEVICEIP)
 DEVICEKEY = os.getenv("DEVICEKEY", DEVICEKEY)
 DEVICEVERS = os.getenv("DEVICEVERS", DEVICEVERS)
 
-print("TinyTuya (Tuya Interface) [%s]\n"%tinytuya.__version__)
+print("TinyTuya (Tuya Interface) [%s]\n"%tinytuya_async.__version__)
 print('TESTING: Device %s at %s with key %s version %s' % (DEVICEID, DEVICEIP, DEVICEKEY,DEVICEVERS))
 
 # Connect to device and fetch state
@@ -40,12 +40,12 @@ RETRY = 2
 watchdog = 0
 while True:
     try:
-        d = tinytuya.OutletDevice(DEVICEID, DEVICEIP, DEVICEKEY)
+        d = tinytuya_async.OutletDevice(DEVICEID, DEVICEIP, DEVICEKEY)
         d.set_version(float(DEVICEVERS))
         data = d.status()
         if data:
             print("\nREADING TEST: Response %r" % data)
-            print("State (bool, True is ON) %r\n" % data['dps']['1'])  
+            print("State (bool, True is ON) %r\n" % data['dps']['1'])
             break
         else:
             print("Incomplete response from device %s [%s]." % (DEVICEID,DEVICEIP))
@@ -67,7 +67,3 @@ for x in [(not switch_state), switch_state]:
         time.sleep(2)
     except:
         print("TIMEOUT trying to toggle device power.")
-
-
-
-

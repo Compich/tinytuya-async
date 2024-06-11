@@ -1,4 +1,4 @@
-from tinytuya.core import Device
+from tinytuya_async.core import Device
 
 """
  Python module to interface with Tuya Portable Air Conditioner devices

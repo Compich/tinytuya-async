@@ -4,10 +4,10 @@
  TinyTuya - Smart Bulb RGB Test
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
 """
-import tinytuya
+import tinytuya_async
 import time
 import os
 import random
@@ -23,15 +23,15 @@ DEVICEIP = os.getenv("DEVICEIP", DEVICEIP)
 DEVICEKEY = os.getenv("DEVICEKEY", DEVICEKEY)
 DEVICEVERS = os.getenv("DEVICEVERS", DEVICEVERS)
 
-print("TinyTuya - Smart Bulb RGB Test [%s]\n" % tinytuya.__version__)
+print("TinyTuya - Smart Bulb RGB Test [%s]\n" % tinytuya_async.__version__)
 print('TESTING: Device %s at %s with key %s version %s' %
       (DEVICEID, DEVICEIP, DEVICEKEY, DEVICEVERS))
 
 # Connect to Tuya BulbDevice
-d = tinytuya.BulbDevice(DEVICEID, DEVICEIP, DEVICEKEY)
-d.set_version(float(DEVICEVERS)) # IMPORTANT to always set version 
+d = tinytuya_async.BulbDevice(DEVICEID, DEVICEIP, DEVICEKEY)
+d.set_version(float(DEVICEVERS)) # IMPORTANT to always set version
 # Keep socket connection open between commands
-d.set_socketPersistent(True)  
+d.set_socketPersistent(True)
 
 # Show status of device
 data = d.status()

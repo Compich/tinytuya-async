@@ -5,7 +5,7 @@ TinyTuya MQTT Gateway for API Server for Tuya based WiFi smart devices
 
 Author: @mschlenstedt
 Date: June 11, 2023
-For more information see https://github.com/jasonacox/tinytuya
+For more information see https://github.com/jasonacox/tinytuya_async
 
 Description
 
@@ -20,7 +20,7 @@ try:
     import requests
 except ImportError as impErr:
     print("WARN: Unable to import requests library, Cloud functions will not work.")
-    print("WARN: Check dependencies. See https://github.com/jasonacox/tinytuya/issues/377")
+    print("WARN: Check dependencies. See https://github.com/jasonacox/tinytuya_async/issues/377")
     print("WARN: Error: {}.".format(impErr.args[0]))
 import sys
 import os
@@ -34,7 +34,7 @@ BUILD = "t2"
 # Defaults
 DEBUGMODE = False
 POLLINGTIME = 5
-TOPIC = "tinytuya"
+TOPIC = "tinytuya_async"
 BROKER = "localhost"
 BROKERPORT = "1883"
 APIPORT = 8888

@@ -1,6 +1,6 @@
 #
 # Note: This file has been deprecated, please do not add new modules to it.
-# Instead, import new modules with `from tinytuya.Contrib import YourNewModule`
+# Instead, import new modules with `from tinytuya_async.Contrib import YourNewModule`
 #  and call with `YourNewModule.YourNewModule(...)`
 #
 

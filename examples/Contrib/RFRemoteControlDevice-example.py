@@ -1,7 +1,7 @@
-#import tinytuya
-#tinytuya.set_debug()
+#import tinytuya_async
+#tinytuya_async.set_debug()
 
-from tinytuya.Contrib import RFRemoteControlDevice
+from tinytuya_async.Contrib import RFRemoteControlDevice
 
 d = RFRemoteControlDevice.RFRemoteControlDevice( 'abcdefghijklmnop123456', '172.28.321.475', '1234567890123abc', persist=True )
 

@@ -1,12 +1,12 @@
-from tinytuya.Contrib import PresenceDetectorDevice
-#from tinytuya import core
+from tinytuya_async.Contrib import PresenceDetectorDevice
+#from tinytuya_async import core
 import time
 import logging
 import requests
 
 log = logging.getLogger(__name__)
-device_id = 'XXXX'                                                                  
-device_ip = 'YYYY'                                                                           
+device_id = 'XXXX'
+device_ip = 'YYYY'
 local_key = 'ZZZZ'
 iftt_url = "https://maker.ifttt.com/trigger/{webhook_name_here}/json/with/key/{key_here}"
 
@@ -26,7 +26,7 @@ def run():
             log.info('ALERT! Presence detected!')
             presence_detected_steps()
         else:
-            log.debug('no presence, sleep...') 
+            log.debug('no presence, sleep...')
         time.sleep(20)
 
 def presence_detected_steps():

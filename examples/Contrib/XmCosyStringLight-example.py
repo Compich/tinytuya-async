@@ -10,7 +10,7 @@
 # Author: Glen Akins, https://github.com/bikerglen
 # Date:   January 2024
 #
-# Format of the color tuple in main is 
+# Format of the color tuple in main is
 #
 # ( HSI Flag, Hue, Sat, Int, CW, WW )
 #
@@ -39,7 +39,7 @@
 # Hue is 2 bytes, MSB first. The rest are 1 byte each.
 #
 
-import tinytuya
+import tinytuya_async
 import time
 import base64
 
@@ -105,7 +105,7 @@ if __name__ == '__main__':
   """
 
   # make the colors chase down the string
-  d = tinytuya.BulbDevice(DEVICE_ID, DEVICE_IP, DEVICE_KEY, version=DEVICE_VER, persist=False)
+  d = tinytuya_async.BulbDevice(DEVICE_ID, DEVICE_IP, DEVICE_KEY, version=DEVICE_VER, persist=False)
   while True:
     for i in range (len(colors)):
       d102 = xmcosy_string_lights_encode_colors (lights, colors, len(colors)-1-i)

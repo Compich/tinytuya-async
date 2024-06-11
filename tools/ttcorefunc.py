@@ -38,7 +38,7 @@ TCPTIMEOUT = 0.4    # Seconds to wait for socket open for scanning
 DEFAULT_NETWORK = '192.168.0.0/24'
 
 # Configuration Files
-CONFIGFILE = 'tinytuya.json'
+CONFIGFILE = 'tinytuya_async.json'
 DEVICEFILE = 'devices.json'
 RAWFILE = 'tuya-raw.json'
 SNAPSHOTFILE = 'snapshot.json'
@@ -258,7 +258,7 @@ def hex2bin(x):
         return bytes.fromhex(x)
 
 def set_debug(toggle=True, color=True):
-    """Enable tinytuya verbose logging"""
+    """Enable tinytuya_async verbose logging"""
     if toggle:
         if color:
             logging.basicConfig(

@@ -1,12 +1,13 @@
 import setuptools
 from pkg_resources import DistributionNotFound, get_distribution
 
-from tinytuya import __version__
+from tinytuya_async import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 INSTALL_REQUIRES = [
+    'aiogram',      # Used for Setup Wizard - Tuya IoT Platform calls
     'requests',      # Used for Setup Wizard - Tuya IoT Platform calls
     'colorama',      # Makes ANSI escape character sequences work under MS Windows.
 ]
@@ -30,17 +31,17 @@ for cryptolib in CHOOSE_CRYPTO_LIB:
 INSTALL_REQUIRES.append( pref_lib )
 
 setuptools.setup(
-    name="tinytuya",
+    name="tinytuya-async",
     version=__version__,
     author="Jason Cox",
     author_email="jason@jasonacox.com",
     description="Python module to interface with Tuya WiFi smart devices",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url='https://github.com/jasonacox/tinytuya',
+    url='https://github.com/Compich/tinytuya-async',
     packages=setuptools.find_packages(exclude=("sandbox",)),
     install_requires=INSTALL_REQUIRES,
-    entry_points={"console_scripts": ["tinytuya=tinytuya.__main__:dummy"]},
+    entry_points={"console_scripts": ["tinytuya_async=tinytuya_async.__main__:dummy"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

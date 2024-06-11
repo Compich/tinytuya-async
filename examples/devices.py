@@ -4,10 +4,10 @@
  TinyTuya - Example to poll status of all devices in Devices.json
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 
-""" 
-import tinytuya
+"""
+import tinytuya_async
 import json
 import time
 
@@ -31,7 +31,7 @@ def tuyaLookup(deviceid):
             return (i['name'], i['key'])
     return ("", "")
 
-# Read Devices.json 
+# Read Devices.json
 try:
     # Load defaults
     with open(DEVICEFILE) as f:
@@ -44,7 +44,7 @@ except:
 
 # Scan network for devices and provide polling data
 print(normal + "\nScanning local network for Tuya devices...")
-devices = tinytuya.deviceScan(False, 30)
+devices = tinytuya_async.deviceScan(False, 30)
 print("    %s%s local active devices discovered%s" %
         (dim, len(devices), normal))
 print("")
@@ -71,8 +71,8 @@ for i in tuyadevices:
                 (subbold, name, dim, ip, alert, normal))
     else:
         try:
-            d = tinytuya.OutletDevice(i['id'], ip, i['key'])
-            d.set_version(float(ver)) # IMPORTANT to always set version 
+            d = tinytuya_async.OutletDevice(i['id'], ip, i['key'])
+            d.set_version(float(ver)) # IMPORTANT to always set version
             data = d.status()
             if 'dps' in data:
                 item['dps'] = data
@@ -98,4 +98,4 @@ for i in tuyadevices:
 # for loop
 
 # Save polling data snapshot.json
-tinytuya.scanner.save_snapshotfile( SNAPSHOTFILE, polling, None )
+tinytuya_async.scanner.save_snapshotfile( SNAPSHOTFILE, polling, None )

@@ -3,12 +3,12 @@
  TinyTuya test for Contrib
 
  Author: Jason A. Cox
- For more information see https://github.com/jasonacox/tinytuya
+ For more information see https://github.com/jasonacox/tinytuya_async
 """
-import tinytuya
-from tinytuya import Contrib
+import tinytuya_async
+from tinytuya_async import Contrib
 
-print("TinyTuya (Contrib Import Test) [%s]\n" % tinytuya.__version__)
+print("TinyTuya (Contrib Import Test) [%s]\n" % tinytuya_async.__version__)
 
 print("   Contrib Devices Loaded: ")
 for i in Contrib.DeviceTypes:
@@ -72,7 +72,7 @@ if IHP_DEVICEID and IHP_DEVICEIP and IHP_DEVICEKEY and IHP_DEVICEVERS:
         time.sleep(5)
         print("      * is_on(): %r" % device.is_on())
         time.sleep(10)
-    
+
     print("    Toggle unit")
     for unit_value in [not unit.value, unit.value]:
         print("      * Setting unit to %r" % Contrib.TemperatureUnit(unit_value))
@@ -80,7 +80,7 @@ if IHP_DEVICEID and IHP_DEVICEIP and IHP_DEVICEKEY and IHP_DEVICEVERS:
         time.sleep(5)
         print("      * get_unit(): %r" % device.get_unit())
         time.sleep(5)
-    
+
     print("    Set target water temperature to lower limit and previous value")
     for target_water_temp_value in [lower_limit_target_water_temp, target_water_temp]:
         print("      * Setting target water temperature to %r" % target_water_temp_value)
@@ -88,7 +88,7 @@ if IHP_DEVICEID and IHP_DEVICEIP and IHP_DEVICEKEY and IHP_DEVICEVERS:
         time.sleep(5)
         print("      * get_target_water_temp(): %r" % device.get_target_water_temp())
         time.sleep(5)
-    
+
     print("    Toggle silence mode")
     for silence_mode in [not is_silence_mode, is_silence_mode]:
         print("      * Setting silence mode to %r" % silence_mode)
